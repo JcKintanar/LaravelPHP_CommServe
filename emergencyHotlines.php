@@ -1,209 +1,296 @@
 <?php
-// Guard: officials only
-require_once __DIR__ . '/includes/officialCheck.php';
+session_start();
 require_once __DIR__ . '/userAccounts/config.php';
 
-// Fetch barangay and city (raw for DB, escaped for UI)
+// Admin/Official guard
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'] ?? '', ['admin', 'official'], true)) {
+  header('Location: /pages/loginPage.php');
+  exit;
+}
+
 $user_id = $_SESSION['user_id'];
-$stmt = $conn->prepare("SELECT barangay, cityMunicipality FROM users WHERE id = ?");
-$stmt->bind_param("i", $user_id);
-$stmt->execute();
-$barangayRow = $stmt->get_result()->fetch_assoc();
-$stmt->close();
-$barangayRaw = $barangayRow['barangay'] ?? 'Barangay';
-$cityRaw = $barangayRow['cityMunicipality'] ?? '';
-$barangayEsc = htmlspecialchars($barangayRaw, ENT_QUOTES, 'UTF-8');
-$cityEsc = htmlspecialchars($cityRaw, ENT_QUOTES, 'UTF-8');
+$stmt_brgy = $conn->prepare("SELECT barangay FROM users WHERE id = ?");
+$stmt_brgy->bind_param("i", $user_id);
+$stmt_brgy->execute();
+$brgy_result = $stmt_brgy->get_result();
+$brgy_data = $brgy_result->fetch_assoc();
+$stmt_brgy->close();
+$barangay = htmlspecialchars($brgy_data['barangay'] ?? 'Barangay', ENT_QUOTES, 'UTF-8');
 
-// Ensure table exists (id, name, barangay, number, description, createdAt)
-$conn->query("CREATE TABLE IF NOT EXISTS emergency_hotlines (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  barangay VARCHAR(100) NOT NULL,
-  cityMunicipality VARCHAR(50) NOT NULL,
-  number VARCHAR(30) NOT NULL,
-  description VARCHAR(255) NULL,
-  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+// CSRF token
+if (empty($_SESSION['csrf_token'])) {
+  $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrf = $_SESSION['csrf_token'];
 
-// Simple flash via session
-if (!isset($_SESSION['flash'])) $_SESSION['flash'] = null;
-function flashSet($type, $msg){ $_SESSION['flash'] = ['type'=>$type,'msg'=>$msg]; }
-function flashShow(){ if(!empty($_SESSION['flash'])){ $f=$_SESSION['flash']; echo '<div class="alert alert-'.$f['type'].'">'.htmlspecialchars($f['msg']).'</div>'; $_SESSION['flash']=null; } }
+function flash($type, $msg) {
+  $_SESSION['flash'] = ['type' => $type, 'msg' => $msg];
+}
 
-// Handle add/delete via PRG
+// Handle POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $action = $_POST['action'] ?? '';
-  if ($action === 'add') {
-    $name = trim($_POST['name'] ?? '');
-    $number = trim($_POST['number'] ?? '');
-    $desc = trim($_POST['description'] ?? '');
-    if ($name === '' || $number === '') {
-      flashSet('danger','Name and number are required.');
-    } else {
-  $stmt = $conn->prepare('INSERT INTO emergency_hotlines (name, barangay, cityMunicipality, number, description) VALUES (?,?,?,?,?)');
-  $stmt->bind_param('sssss', $name, $barangayRaw, $cityRaw, $number, $desc);
-      if ($stmt->execute()) { flashSet('success','Hotline added.'); } else { flashSet('danger','Failed to add hotline.'); }
-      $stmt->close();
-    }
+  $token = $_POST['csrf_token'] ?? '';
+  if (!hash_equals($_SESSION['csrf_token'], $token)) {
+    flash('danger', 'Invalid CSRF token.');
     header('Location: /emergencyHotlines.php');
     exit;
   }
+
+  $action = $_POST['action'] ?? '';
+  
+  if ($action === 'add') {
+    $name = trim($_POST['name'] ?? '');
+    $number = trim($_POST['number'] ?? '');
+    $description = trim($_POST['description'] ?? '');
+    $brgy = trim($_POST['barangay'] ?? '');
+    $city = trim($_POST['cityMunicipality'] ?? '');
+
+    if ($name === '' || $number === '') {
+      flash('danger', 'Name and number are required.');
+      header('Location: /emergencyHotlines.php');
+      exit;
+    }
+
+    $stmt = $conn->prepare('INSERT INTO emergency_hotlines (name, number, description, barangay, cityMunicipality) VALUES (?,?,?,?,?)');
+    $stmt->bind_param('sssss', $name, $number, $description, $brgy, $city);
+    if ($stmt->execute()) {
+      flash('success', 'Emergency hotline added successfully.');
+    } else {
+      flash('danger', 'Failed to add hotline: ' . $conn->error);
+    }
+    $stmt->close();
+    header('Location: /emergencyHotlines.php');
+    exit;
+  }
+
   if ($action === 'edit') {
     $id = (int)($_POST['id'] ?? 0);
     $name = trim($_POST['name'] ?? '');
     $number = trim($_POST['number'] ?? '');
-    $desc = trim($_POST['description'] ?? '');
-    if ($id > 0 && $name !== '' && $number !== '') {
-  $stmt = $conn->prepare('UPDATE emergency_hotlines SET name=?, number=?, description=? WHERE id=? AND barangay=? AND cityMunicipality=?');
-  $stmt->bind_param('sssiss', $name, $number, $desc, $id, $barangayRaw, $cityRaw);
-      if ($stmt->execute()) { flashSet('success','Hotline updated.'); } else { flashSet('danger','Failed to update hotline.'); }
-      $stmt->close();
+    $description = trim($_POST['description'] ?? '');
+    $brgy = trim($_POST['barangay'] ?? '');
+    $city = trim($_POST['cityMunicipality'] ?? '');
+
+    if ($id <= 0 || $name === '' || $number === '') {
+      flash('danger', 'Invalid data.');
+      header('Location: /emergencyHotlines.php');
+      exit;
     }
+
+    $stmt = $conn->prepare('UPDATE emergency_hotlines SET name=?, number=?, description=?, barangay=?, cityMunicipality=? WHERE id=?');
+    $stmt->bind_param('sssssi', $name, $number, $description, $brgy, $city, $id);
+    if ($stmt->execute()) {
+      flash('success', 'Emergency hotline updated successfully.');
+    } else {
+      flash('danger', 'Failed to update hotline: ' . $conn->error);
+    }
+    $stmt->close();
     header('Location: /emergencyHotlines.php');
     exit;
   }
+
   if ($action === 'delete') {
     $id = (int)($_POST['id'] ?? 0);
-    if ($id > 0) {
-  $stmt = $conn->prepare('DELETE FROM emergency_hotlines WHERE id=? AND barangay=? AND cityMunicipality=?');
-  $stmt->bind_param('iss', $id, $barangayRaw, $cityRaw);
-      if ($stmt->execute()) { flashSet('success','Hotline deleted.'); } else { flashSet('danger','Failed to delete hotline.'); }
-      $stmt->close();
+    if ($id <= 0) {
+      flash('danger', 'Invalid hotline ID.');
+      header('Location: /emergencyHotlines.php');
+      exit;
     }
+    $stmt = $conn->prepare('DELETE FROM emergency_hotlines WHERE id=?');
+    $stmt->bind_param('i', $id);
+    if ($stmt->execute()) {
+      flash('success', 'Emergency hotline deleted successfully.');
+    } else {
+      flash('danger', 'Failed to delete hotline: ' . $conn->error);
+    }
+    $stmt->close();
     header('Location: /emergencyHotlines.php');
     exit;
   }
 }
 
-// Fetch hotlines for this official's barangay only
-$stmt = $conn->prepare('SELECT id, name, number, description, createdAt FROM emergency_hotlines WHERE barangay = ? AND cityMunicipality = ? ORDER BY createdAt DESC');
-$stmt->bind_param('ss', $barangayRaw, $cityRaw);
-$stmt->execute();
-$hotlines = $stmt->get_result();
-$stmt->close();
+$hotlines = $conn->query('SELECT id, name, number, description, barangay, cityMunicipality, createdAt FROM emergency_hotlines ORDER BY name ASC');
+
+$edit_hotline = null;
+if (isset($_GET['edit'])) {
+  $eid = (int)$_GET['edit'];
+  if ($eid > 0) {
+    $st = $conn->prepare('SELECT id, name, number, description, barangay, cityMunicipality FROM emergency_hotlines WHERE id=?');
+    $st->bind_param('i', $eid);
+    $st->execute();
+    $res = $st->get_result();
+    $edit_hotline = $res->fetch_assoc() ?: null;
+    $st->close();
+  }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Emergency Hotlines - CommServe</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Emergency Hotlines - CommServe</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
   <style>
     body { background-color: #f8f9fa; }
-    footer.fixed-bottom-footer { position: fixed; left:0; bottom:0; width:100%; z-index:999; }
-    body { padding-bottom: 80px; }
+    .btn-black { background-color: #000; color: #fff; }
+    .btn-black:hover { background-color: #333; color: #fff; }
   </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="/dashboards/officialDashboard.php"><i class="bi bi-briefcase me-2"></i>Barangay <?= $barangay ?> Official</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
-    <div id="nav" class="collapse navbar-collapse">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="/dashboards/officialDashboard.php"><i class="bi bi-arrow-left me-1"></i>Back to Dashboard</a></li>
-      </ul>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand fw-bold" href="/dashboards/adminDashboard.php"><i class="bi bi-telephone-fill me-2"></i>Barangay <?= $barangay ?></a>
+      <div class="d-flex">
+        <a class="nav-link text-white" href="/dashboards/adminDashboard.php"><i class="bi bi-arrow-left me-1"></i>Back to Dashboard</a>
+      </div>
     </div>
-  </div>
-</nav>
+  </nav>
 
-<div class="container my-5">
-  <h2 class="mb-4">Emergency Hotlines</h2>
-  <?php flashShow(); ?>
+  <div class="container py-5">
+    <h2 class="text-center mb-4"><i class="bi bi-telephone-fill me-2"></i>Manage Emergency Hotlines</h2>
 
-  <div class="card shadow-sm mb-4">
-    <div class="card-header bg-dark text-white">
-      <i class="bi bi-telephone-fill me-2"></i>Add Hotline
+    <?php if (!empty($_SESSION['flash'])): ?>
+      <div class="alert alert-<?= htmlspecialchars($_SESSION['flash']['type']) ?>">
+        <?= htmlspecialchars($_SESSION['flash']['msg']) ?>
+      </div>
+      <?php unset($_SESSION['flash']); ?>
+    <?php endif; ?>
+
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-dark text-white">Add Emergency Hotline</div>
+      <div class="card-body">
+        <form method="post" action="/emergencyHotlines.php" class="row g-3">
+          <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
+          <input type="hidden" name="action" value="add">
+          <div class="col-md-6">
+            <label class="form-label">Name/Department <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control" placeholder="e.g., Barangay Hall, Fire Station" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Contact Number <span class="text-danger">*</span></label>
+            <input type="text" name="number" class="form-control" placeholder="e.g., 0912-345-6789" required>
+          </div>
+          <div class="col-md-12">
+            <label class="form-label">Description</label>
+            <input type="text" name="description" class="form-control" placeholder="e.g., Emergency Response, Medical Assistance">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Barangay</label>
+            <input type="text" name="barangay" class="form-control" value="<?= $barangay ?>">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Municipality/City</label>
+            <input type="text" name="cityMunicipality" class="form-control">
+          </div>
+          <div class="col-12 text-end">
+            <button type="submit" class="btn btn-black">Save Hotline</button>
+          </div>
+        </form>
+      </div>
     </div>
-    <div class="card-body">
-      <form method="post" class="row g-3">
-        <input type="hidden" name="action" value="add">
-        <div class="col-md-4">
-          <label class="form-label">Name</label>
-          <input type="text" name="name" class="form-control" placeholder="e.g., Police" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Number</label>
-          <input type="text" name="number" class="form-control" placeholder="e.g., 911 or 123-4567" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Description (optional)</label>
-          <input type="text" name="description" class="form-control" placeholder="e.g., 24/7 hotline">
-        </div>
-        <div class="col-12 text-end">
-          <button type="submit" class="btn btn-dark">Add Hotline</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
-  <div class="card shadow-sm">
-    <div class="card-header bg-dark text-white">Existing Hotlines</div>
-    <div class="card-body">
-      <?php if ($hotlines && $hotlines->num_rows > 0): ?>
-        <div class="table-responsive">
-          <table class="table table-hover align-middle">
-            <thead class="table-dark"><tr><th>#</th><th>Name</th><th>Number</th><th>Description</th><th>Created</th><th>Actions</th></tr></thead>
-            <tbody>
-              <?php 
-                $i=1; 
-                $edit_id = isset($_GET['edit']) ? (int)$_GET['edit'] : 0;
-                while($h = $hotlines->fetch_assoc()): 
-                  if ($edit_id === (int)$h['id']) { // Edit mode row
-              ?>
-                <tr class="table-warning">
-                  <form method="post">
-                    <td><?= $i++ ?></td>
-                    <td><input type="text" name="name" class="form-control" value="<?= htmlspecialchars($h['name']) ?>" required></td>
-                    <td><input type="text" name="number" class="form-control" value="<?= htmlspecialchars($h['number']) ?>" required></td>
-                    <td><input type="text" name="description" class="form-control" value="<?= htmlspecialchars($h['description'] ?? '') ?>"></td>
-                    <td><?= htmlspecialchars(date('M d, Y', strtotime($h['createdAt']))) ?></td>
-                    <td>
-                      <input type="hidden" name="action" value="edit">
-                      <input type="hidden" name="id" value="<?= (int)$h['id'] ?>">
-                      <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-save"></i> Save</button>
-                      <a href="/emergencyHotlines.php" class="btn btn-sm btn-secondary">Cancel</a>
-                    </td>
-                  </form>
-                </tr>
-              <?php 
-                  } else { // Normal row
-              ?>
+    <?php if ($edit_hotline): ?>
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-dark text-white">Edit Emergency Hotline</div>
+        <div class="card-body">
+          <form method="post" action="/emergencyHotlines.php" class="row g-3">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="id" value="<?= (int)$edit_hotline['id'] ?>">
+            <div class="col-md-6">
+              <label class="form-label">Name/Department <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($edit_hotline['name']) ?>" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Contact Number <span class="text-danger">*</span></label>
+              <input type="text" name="number" class="form-control" value="<?= htmlspecialchars($edit_hotline['number']) ?>" required>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label">Description</label>
+              <input type="text" name="description" class="form-control" value="<?= htmlspecialchars($edit_hotline['description'] ?? '') ?>">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Barangay</label>
+              <input type="text" name="barangay" class="form-control" value="<?= htmlspecialchars($edit_hotline['barangay'] ?? '') ?>">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Municipality/City</label>
+              <input type="text" name="cityMunicipality" class="form-control" value="<?= htmlspecialchars($edit_hotline['cityMunicipality'] ?? '') ?>">
+            </div>
+            <div class="col-12 text-end">
+              <a href="/emergencyHotlines.php" class="btn btn-secondary">Cancel</a>
+              <button type="submit" class="btn btn-black">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    <?php endif; ?>
+
+    <div class="card shadow-sm">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0">All Emergency Hotlines</h5>
+      </div>
+      <div class="card-body">
+        <?php if ($hotlines && $hotlines->num_rows > 0): ?>
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
                 <tr>
-                  <td><?= $i++ ?></td>
-                  <td><?= htmlspecialchars($h['name']) ?></td>
-                  <td><?= htmlspecialchars($h['number']) ?></td>
-                  <td><?= htmlspecialchars($h['description'] ?? '') ?></td>
-                  <td><?= htmlspecialchars(date('M d, Y', strtotime($h['createdAt']))) ?></td>
-                  <td>
-                    <a href="/emergencyHotlines.php?edit=<?= (int)$h['id'] ?>" class="btn btn-sm btn-primary"><i class="bi bi-pencil"></i> Edit</a>
-                    <form method="post" class="d-inline">
-                      <input type="hidden" name="action" value="delete">
-                      <input type="hidden" name="id" value="<?= (int)$h['id'] ?>">
-                      <button type="submit" class="btn btn-sm btn-danger"><i class="bi bi-trash"></i> Delete</button>
-                    </form>
-                  </td>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Number</th>
+                  <th>Description</th>
+                  <th>Barangay</th>
+                  <th>Municipality/City</th>
+                  <th>Added</th>
+                  <th>Actions</th>
                 </tr>
-              <?php 
-                  }
-                endwhile; 
-              ?>
-            </tbody>
-          </table>
-        </div>
-      <?php else: ?>
-        <p class="text-muted mb-0">No hotlines added yet.</p>
-      <?php endif; ?>
+              </thead>
+              <tbody>
+                <?php while ($hot = $hotlines->fetch_assoc()): ?>
+                  <tr>
+                    <td><?= (int)$hot['id'] ?></td>
+                    <td><strong><?= htmlspecialchars($hot['name']) ?></strong></td>
+                    <td>
+                      <a href="tel:<?= htmlspecialchars($hot['number']) ?>" class="text-decoration-none">
+                        <i class="bi bi-telephone me-1"></i><?= htmlspecialchars($hot['number']) ?>
+                      </a>
+                    </td>
+                    <td><?= htmlspecialchars($hot['description'] ?? '-') ?></td>
+                    <td><?= htmlspecialchars($hot['barangay']) ?></td>
+                    <td><?= htmlspecialchars($hot['cityMunicipality']) ?></td>
+                    <td><?= date('M d, Y', strtotime($hot['createdAt'])) ?></td>
+                    <td>
+                      <a class="btn btn-sm btn-black me-1" href="/emergencyHotlines.php?edit=<?= (int)$hot['id'] ?>">
+                        <i class="bi bi-pencil-square"></i>
+                      </a>
+                      <form method="post" action="/emergencyHotlines.php" class="d-inline">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="id" value="<?= (int)$hot['id'] ?>">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this hotline?')">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                <?php endwhile; ?>
+              </tbody>
+            </table>
+          </div>
+        <?php else: ?>
+          <p class="text-muted text-center">No emergency hotlines yet. Add one above!</p>
+        <?php endif; ?>
+      </div>
     </div>
   </div>
-</div>
 
-<footer class="text-white text-center py-4 bg-dark fixed-bottom-footer">
-  <p class="mb-1">&copy; 2025 CommServe. All rights reserved.</p>
-</footer>
+  <footer class="text-white text-center py-4 bg-dark mt-5">
+    <p class="mb-1">&copy; 2025 CommServe. All rights reserved.</p>
+  </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

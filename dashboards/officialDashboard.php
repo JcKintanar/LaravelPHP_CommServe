@@ -118,6 +118,16 @@ $username = htmlspecialchars($_SESSION['username'] ?? 'User', ENT_QUOTES, 'UTF-8
         </div>
       </div>
     </div>
+    <div class="col-md-4">
+      <div class="card h-100 shadow-sm border-dark">
+        <div class="card-body text-center">
+          <i class="bi bi-chat-dots-fill" style="font-size:3.5rem;color:#000;"></i>
+          <h5 class="mt-3">Messages</h5>
+          <p class="text-muted">Communicate with residents</p>
+          <a href="/messages.php" class="btn btn-dark w-100">View Messages</a>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 

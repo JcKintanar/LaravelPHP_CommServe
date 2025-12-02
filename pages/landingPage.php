@@ -78,7 +78,7 @@
       <a href="loginPage.php" class="btn btn-dark btn-custom me-2">
         <i class="bi bi-box-arrow-in-right me-1"></i> Login
       </a>
-      <a href="/userAccounts/Signup.php" class="btn btn-outline-dark btn-custom">
+      <a href="Signup.php" class="btn btn-outline-dark btn-custom">
         <i class="bi bi-person-plus me-1"></i> Sign Up
       </a>
     </div>

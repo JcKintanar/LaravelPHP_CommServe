@@ -1,17 +1,21 @@
 <?php
-// Start session
-session_start();
+// Simple logout endpoint for the non-Laravel pages
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Clear all session data
+$_SESSION = [];
+if (ini_get('session.use_cookies')) {
+    $params = session_get_cookie_params();
+    setcookie(session_name(), '', time() - 42000,
+        $params['path'], $params['domain'], $params['secure'], $params['httponly']
+    );
+}
+
 session_unset();
 session_destroy();
 
-// Clear session cookie
-if (isset($_COOKIE[session_name()])) {
-    setcookie(session_name(), '', time()-3600, '/');
-}
-
-// Redirect to landing page
-header('Location: http://localhost/pages/landingPage.php');
-exit();
-?>
+// Redirect back to landing page
+header('Location: /pages/landingPage.php');
+exit;

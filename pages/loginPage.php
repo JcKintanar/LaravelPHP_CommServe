@@ -37,10 +37,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($row = $result->fetch_assoc()) {
                 if (password_verify($password, $row['password'])) {
-                    // Set session
-                    $_SESSION['user_id']  = (int)$row['id'];
-                    $_SESSION['username'] = $row['username'];
-                    $_SESSION['role']     = $row['role'] ?: 'user';
+                  // Regenerate session id to prevent session fixation
+                  session_regenerate_id(true);
+
+                  // Set session
+                  $_SESSION['user_id']  = (int)$row['id'];
+                  $_SESSION['username'] = $row['username'];
+                  $_SESSION['role']     = $row['role'] ?: 'user';
 
                     // Redirect by role
                     if ($_SESSION['role'] === 'admin') {
@@ -83,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="/pages/landingpage.php">
+    <a class="navbar-brand fw-bold" href="/pages/landingPage.php">
       <i class="bi bi-people-fill me-2"></i>CommServe
     </a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">

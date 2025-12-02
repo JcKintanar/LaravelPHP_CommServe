@@ -1,0 +1,11 @@
+/vendor
+/node_modules
+/.env
+/.idea
+/.vscode
+/public/storage
+/storage/*.key
+.phpunit.result.cache
+composer.lock
+npm-debug.log
+yarn-error.log

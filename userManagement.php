@@ -49,14 +49,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($action === 'add') {
     $firstName = trim($_POST['firstName'] ?? '');
     $lastName  = trim($_POST['lastName'] ?? '');
+    $middleName = trim($_POST['middleName'] ?? '');
     $username  = trim($_POST['username'] ?? '');
     $email     = trim($_POST['email'] ?? '');
-  $phoneNumber = trim($_POST['phoneNumber'] ?? '');
-  $password = trim($_POST['password'] ?? '');
+    $phoneNumber = trim($_POST['phoneNumber'] ?? '');
+    $password = trim($_POST['password'] ?? '');
     $barangay  = trim($_POST['barangay'] ?? '');
     $city      = trim($_POST['city'] ?? '');
     $region    = trim($_POST['region'] ?? '');
     $province  = trim($_POST['province'] ?? '');
+    $region_id = isset($_POST['region_id']) ? (int)$_POST['region_id'] : null;
+    $province_id = isset($_POST['province_id']) ? (int)$_POST['province_id'] : null;
+    $municipality_id = isset($_POST['municipality_id']) ? (int)$_POST['municipality_id'] : null;
+    $barangay_id = isset($_POST['barangay_id']) ? (int)$_POST['barangay_id'] : null;
     $role      = normalize_role(trim($_POST['role'] ?? 'user'));
 
     if ($firstName === '' || $lastName === '' || $username === '' || $email === '') {
@@ -81,8 +86,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $password = '123';
     }
     $password = password_hash($password, PASSWORD_DEFAULT);
-  $stmt = $conn->prepare('INSERT INTO users (firstName, lastName, username, email, phoneNumber, barangay, cityMunicipality, region, province, role, password) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
-  $stmt->bind_param('sssssssssss', $firstName, $lastName, $username, $email, $phoneNumber, $barangay, $city, $region, $province, $role, $password);
+    $stmt = $conn->prepare('INSERT INTO users (firstName, lastName, middleName, username, email, phoneNumber, barangay, barangay_id, cityMunicipality, municipality_id, region, region_id, province, province_id, role, password) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+    $stmt->bind_param('sssssssisissisis', $firstName, $lastName, $middleName, $username, $email, $phoneNumber, $barangay, $barangay_id, $city, $municipality_id, $region, $region_id, $province, $province_id, $role, $password);
     if ($stmt->execute()) {
       flash('success', 'User added successfully. Default password:123');
     } else {
@@ -97,6 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id        = (int)($_POST['id'] ?? 0);
     $firstName = trim($_POST['firstName'] ?? '');
     $lastName  = trim($_POST['lastName'] ?? '');
+    $middleName = trim($_POST['middleName'] ?? '');
     $username  = trim($_POST['username'] ?? '');
     $email     = trim($_POST['email'] ?? '');
     $phoneNumber = trim($_POST['phoneNumber'] ?? '');
@@ -104,8 +110,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $city      = trim($_POST['city'] ?? '');
     $region    = trim($_POST['region'] ?? '');
     $province  = trim($_POST['province'] ?? '');
-  $role      = normalize_role(trim($_POST['role'] ?? 'user'));
-  $password  = trim($_POST['password'] ?? '');
+    $region_id = isset($_POST['region_id']) ? (int)$_POST['region_id'] : null;
+    $province_id = isset($_POST['province_id']) ? (int)$_POST['province_id'] : null;
+    $municipality_id = isset($_POST['municipality_id']) ? (int)$_POST['municipality_id'] : null;
+    $barangay_id = isset($_POST['barangay_id']) ? (int)$_POST['barangay_id'] : null;
+    $role      = normalize_role(trim($_POST['role'] ?? 'user'));
+    $password  = trim($_POST['password'] ?? '');
 
     if ($id <= 0) {
       flash('danger', 'Invalid user ID.');
@@ -127,11 +137,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($password !== '') {
       $password_hashed = password_hash($password, PASSWORD_DEFAULT);
-  $stmt = $conn->prepare('UPDATE users SET firstName=?, lastName=?, username=?, email=?, phoneNumber=?, barangay=?, cityMunicipality=?, region=?, province=?, role=?, password=? WHERE id=?');
-  $stmt->bind_param('sssssssssssi', $firstName, $lastName, $username, $email, $phoneNumber, $barangay, $city, $region, $province, $role, $password_hashed, $id);
+      $stmt = $conn->prepare('UPDATE users SET firstName=?, lastName=?, middleName=?, username=?, email=?, phoneNumber=?, barangay=?, barangay_id=?, cityMunicipality=?, municipality_id=?, region=?, region_id=?, province=?, province_id=?, role=?, password=? WHERE id=?');
+      $stmt->bind_param('sssssssisissisisi', $firstName, $lastName, $middleName, $username, $email, $phoneNumber, $barangay, $barangay_id, $city, $municipality_id, $region, $region_id, $province, $province_id, $role, $password_hashed, $id);
     } else {
-      $stmt = $conn->prepare('UPDATE users SET firstName=?, lastName=?, username=?, email=?, phoneNumber=?, barangay=?, cityMunicipality=?, region=?, province=?, role=? WHERE id=?');
-      $stmt->bind_param('ssssssssssi', $firstName, $lastName, $username, $email, $phoneNumber, $barangay, $city, $region, $province, $role, $id);
+      $stmt = $conn->prepare('UPDATE users SET firstName=?, lastName=?, middleName=?, username=?, email=?, phoneNumber=?, barangay=?, barangay_id=?, cityMunicipality=?, municipality_id=?, region=?, region_id=?, province=?, province_id=?, role=? WHERE id=?');
+      $stmt->bind_param('sssssssisississi', $firstName, $lastName, $middleName, $username, $email, $phoneNumber, $barangay, $barangay_id, $city, $municipality_id, $region, $region_id, $province, $province_id, $role, $id);
     }
     if ($stmt->execute()) {
       flash('success', 'User updated successfully.');
@@ -169,14 +179,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Load users for table
-$users_result = $conn->query('SELECT id, firstName, lastName, username, email, phoneNumber, barangay, cityMunicipality, region, province, role, createdAt FROM users ORDER BY createdAt DESC');
+$users_result = $conn->query('SELECT id, firstName, lastName, middleName, username, email, phoneNumber, barangay, barangay_id, cityMunicipality, municipality_id, region, region_id, province, province_id, role, createdAt FROM users ORDER BY createdAt DESC');
 
 // If editing, fetch user
 $edit_user = null;
 if (isset($_GET['edit'])) {
   $eid = (int)$_GET['edit'];
   if ($eid > 0) {
-    $st = $conn->prepare('SELECT id, firstName, lastName, username, email, phoneNumber, barangay, cityMunicipality, region, province, role FROM users WHERE id=?');
+    $st = $conn->prepare('SELECT id, firstName, lastName, middleName, username, email, phoneNumber, barangay, barangay_id, cityMunicipality, municipality_id, region, region_id, province, province_id, role FROM users WHERE id=?');
     $st->bind_param('i', $eid);
     $st->execute();
     $res = $st->get_result();
@@ -257,40 +267,32 @@ if (isset($_GET['edit'])) {
             <input type="text" name="phoneNumber" class="form-control">
           </div>
           <div class="col-md-6">
-            <label class="form-label">Barangay</label>
-            <input type="text" name="barangay" class="form-control">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Municipality/City</label>
-            <input type="text" name="city" class="form-control">
-          </div>
-          <div class="col-md-6">
             <label class="form-label">Region</label>
-            <select name="region" class="form-select" required>
+            <select name="region_id" id="add_region_id" class="form-select" required>
               <option value="">Select Region</option>
-              <option value="I">I</option>
-              <option value="II">II</option>
-              <option value="III">III</option>
-              <option value="IV-A">IV-A</option>
-              <option value="V">V</option>
-              <option value="VI">VI</option>
-              <option value="VII">VII</option>
-              <option value="VIII">VIII</option>
-              <option value="IX">IX</option>
-              <option value="X">X</option>
-              <option value="XI">XI</option>
-              <option value="XII">XII</option>
-              <option value="XIII">XIII</option>
-              <option value="MIMAROPA">MIMAROPA</option>
-              <option value="NCR">NCR</option>
-              <option value="CAR">CAR</option>
-              <option value="BARMM">BARMM</option>
-              <option value="NIR">NIR</option>
             </select>
+            <input type="hidden" name="region" id="add_region">
           </div>
           <div class="col-md-6">
             <label class="form-label">Province</label>
-            <input type="text" name="province" class="form-control">
+            <select name="province_id" id="add_province_id" class="form-select" required disabled>
+              <option value="">Select Region first</option>
+            </select>
+            <input type="hidden" name="province" id="add_province">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Municipality/City</label>
+            <select name="municipality_id" id="add_municipality_id" class="form-select" required disabled>
+              <option value="">Select Province first</option>
+            </select>
+            <input type="hidden" name="city" id="add_city">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Barangay</label>
+            <select name="barangay_id" id="add_barangay_id" class="form-select" required disabled>
+              <option value="">Select Municipality first</option>
+            </select>
+            <input type="hidden" name="barangay" id="add_barangay">
           </div>
           <div class="col-md-6">
             <label class="form-label">Role</label>
@@ -346,40 +348,36 @@ if (isset($_GET['edit'])) {
               <input type="text" name="phoneNumber" class="form-control" value="<?= htmlspecialchars($edit_user['phoneNumber']) ?>">
             </div>
             <div class="col-md-6">
-              <label class="form-label">Barangay</label>
-              <input type="text" name="barangay" class="form-control" value="<?= htmlspecialchars($edit_user['barangay']) ?>">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Municipality/City</label>
-              <input type="text" name="city" class="form-control" value="<?= htmlspecialchars($edit_user['cityMunicipality']) ?>">
+              <label class="form-label">Middle Name</label>
+              <input type="text" name="middleName" class="form-control" value="<?= htmlspecialchars($edit_user['middleName'] ?? '') ?>">
             </div>
             <div class="col-md-6">
               <label class="form-label">Region</label>
-              <select name="region" class="form-select" required>
+              <select name="region_id" id="edit_region_id" class="form-select" required>
                 <option value="">Select Region</option>
-                <option value="I" <?= ($edit_user['region'] ?? '')==='I'?'selected':''; ?>>I</option>
-                <option value="II" <?= ($edit_user['region'] ?? '')==='II'?'selected':''; ?>>II</option>
-                <option value="III" <?= ($edit_user['region'] ?? '')==='III'?'selected':''; ?>>III</option>
-                <option value="IV-A" <?= ($edit_user['region'] ?? '')==='IV-A'?'selected':''; ?>>IV-A</option>
-                <option value="V" <?= ($edit_user['region'] ?? '')==='V'?'selected':''; ?>>V</option>
-                <option value="VI" <?= ($edit_user['region'] ?? '')==='VI'?'selected':''; ?>>VI</option>
-                <option value="VII" <?= ($edit_user['region'] ?? '')==='VII'?'selected':''; ?>>VII</option>
-                <option value="VIII" <?= ($edit_user['region'] ?? '')==='VIII'?'selected':''; ?>>VIII</option>
-                <option value="IX" <?= ($edit_user['region'] ?? '')==='IX'?'selected':''; ?>>IX</option>
-                <option value="X" <?= ($edit_user['region'] ?? '')==='X'?'selected':''; ?>>X</option>
-                <option value="XI" <?= ($edit_user['region'] ?? '')==='XI'?'selected':''; ?>>XI</option>
-                <option value="XII" <?= ($edit_user['region'] ?? '')==='XII'?'selected':''; ?>>XII</option>
-                <option value="XIII" <?= ($edit_user['region'] ?? '')==='XIII'?'selected':''; ?>>XIII</option>
-                <option value="MIMAROPA" <?= ($edit_user['region'] ?? '')==='MIMAROPA'?'selected':''; ?>>MIMAROPA</option>
-                <option value="NCR" <?= ($edit_user['region'] ?? '')==='NCR'?'selected':''; ?>>NCR</option>
-                <option value="CAR" <?= ($edit_user['region'] ?? '')==='CAR'?'selected':''; ?>>CAR</option>
-                <option value="BARMM" <?= ($edit_user['region'] ?? '')==='BARMM'?'selected':''; ?>>BARMM</option>
-                <option value="NIR" <?= ($edit_user['region'] ?? '')==='NIR'?'selected':''; ?>>NIR</option>
               </select>
+              <input type="hidden" name="region" id="edit_region" value="<?= htmlspecialchars($edit_user['region'] ?? '') ?>">
             </div>
             <div class="col-md-6">
               <label class="form-label">Province</label>
-              <input type="text" name="province" class="form-control" value="<?= htmlspecialchars($edit_user['province'] ?? '') ?>">
+              <select name="province_id" id="edit_province_id" class="form-select" required>
+                <option value="">Select Region first</option>
+              </select>
+              <input type="hidden" name="province" id="edit_province" value="<?= htmlspecialchars($edit_user['province'] ?? '') ?>">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Municipality/City</label>
+              <select name="municipality_id" id="edit_municipality_id" class="form-select" required>
+                <option value="">Select Province first</option>
+              </select>
+              <input type="hidden" name="city" id="edit_city" value="<?= htmlspecialchars($edit_user['cityMunicipality'] ?? '') ?>">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Barangay</label>
+              <select name="barangay_id" id="edit_barangay_id" class="form-select" required>
+                <option value="">Select Municipality first</option>
+              </select>
+              <input type="hidden" name="barangay" id="edit_barangay" value="<?= htmlspecialchars($edit_user['barangay'] ?? '') ?>">
             </div>
             <div class="col-md-6">
               <label class="form-label">Role</label>
@@ -455,5 +453,149 @@ if (isset($_GET['edit'])) {
   <footer class="text-white text-center py-4 bg-dark mt-5">
     <p class="mb-1">&copy; 2025 CommServe. All rights reserved.</p>
   </footer>
+  
+  <script>
+  // Load regions on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    loadRegions('add');
+    <?php if ($edit_user): ?>
+    loadRegions('edit', <?= (int)($edit_user['region_id'] ?? 0) ?>, <?= (int)($edit_user['province_id'] ?? 0) ?>, <?= (int)($edit_user['municipality_id'] ?? 0) ?>, <?= (int)($edit_user['barangay_id'] ?? 0) ?>);
+    <?php endif; ?>
+  });
+
+  function loadRegions(mode, selectedRegion = 0, selectedProvince = 0, selectedMunicipality = 0, selectedBarangay = 0) {
+    const prefix = mode + '_';
+    fetch('/api/get-regions.php')
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          const select = document.getElementById(prefix + 'region_id');
+          select.innerHTML = '<option value="">Select Region</option>';
+          data.regions.forEach(region => {
+            const option = document.createElement('option');
+            option.value = region.id;
+            option.textContent = region.name;
+            option.dataset.name = region.name;
+            if (region.id === selectedRegion) option.selected = true;
+            select.appendChild(option);
+          });
+          select.addEventListener('change', function(e) { onRegionChange(e, mode); });
+          if (selectedRegion) {
+            loadProvinces(mode, selectedRegion, selectedProvince, selectedMunicipality, selectedBarangay);
+          }
+        }
+      });
+  }
+
+  function onRegionChange(e, mode) {
+    const regionId = e.target.value;
+    const regionName = e.target.options[e.target.selectedIndex].dataset.name || '';
+    document.getElementById(mode + '_region').value = regionName;
+    const prefix = mode + '_';
+    document.getElementById(prefix + 'province_id').innerHTML = '<option value="">Loading...</option>';
+    document.getElementById(prefix + 'municipality_id').innerHTML = '<option value="">Select Province first</option>';
+    document.getElementById(prefix + 'municipality_id').disabled = true;
+    document.getElementById(prefix + 'barangay_id').innerHTML = '<option value="">Select Municipality first</option>';
+    document.getElementById(prefix + 'barangay_id').disabled = true;
+    if (regionId) loadProvinces(mode, regionId);
+  }
+
+  function loadProvinces(mode, regionId, selectedProvince = 0, selectedMunicipality = 0, selectedBarangay = 0) {
+    const prefix = mode + '_';
+    fetch('/api/get-provinces.php?region_id=' + regionId)
+      .then(response => response.json())
+      .then(data => {
+        const select = document.getElementById(prefix + 'province_id');
+        if (data.success) {
+          select.innerHTML = '<option value="">Select Province</option>';
+          data.provinces.forEach(province => {
+            const option = document.createElement('option');
+            option.value = province.id;
+            option.textContent = province.name;
+            option.dataset.name = province.name;
+            if (province.id === selectedProvince) option.selected = true;
+            select.appendChild(option);
+          });
+          select.disabled = false;
+          select.addEventListener('change', function(e) { onProvinceChange(e, mode); });
+          if (selectedProvince) {
+            loadMunicipalities(mode, selectedProvince, selectedMunicipality, selectedBarangay);
+          }
+        }
+      });
+  }
+
+  function onProvinceChange(e, mode) {
+    const provinceId = e.target.value;
+    const provinceName = e.target.options[e.target.selectedIndex].dataset.name || '';
+    document.getElementById(mode + '_province').value = provinceName;
+    const prefix = mode + '_';
+    document.getElementById(prefix + 'municipality_id').innerHTML = '<option value="">Loading...</option>';
+    document.getElementById(prefix + 'barangay_id').innerHTML = '<option value="">Select Municipality first</option>';
+    document.getElementById(prefix + 'barangay_id').disabled = true;
+    if (provinceId) loadMunicipalities(mode, provinceId);
+  }
+
+  function loadMunicipalities(mode, provinceId, selectedMunicipality = 0, selectedBarangay = 0) {
+    const prefix = mode + '_';
+    fetch('/api/get-municipalities.php?province_id=' + provinceId)
+      .then(response => response.json())
+      .then(data => {
+        const select = document.getElementById(prefix + 'municipality_id');
+        if (data.success) {
+          select.innerHTML = '<option value="">Select City/Municipality</option>';
+          data.municipalities.forEach(municipality => {
+            const option = document.createElement('option');
+            option.value = municipality.id;
+            option.textContent = municipality.name;
+            option.dataset.name = municipality.name;
+            if (municipality.id === selectedMunicipality) option.selected = true;
+            select.appendChild(option);
+          });
+          select.disabled = false;
+          select.addEventListener('change', function(e) { onMunicipalityChange(e, mode); });
+          if (selectedMunicipality) {
+            loadBarangays(mode, selectedMunicipality, selectedBarangay);
+          }
+        }
+      });
+  }
+
+  function onMunicipalityChange(e, mode) {
+    const municipalityId = e.target.value;
+    const municipalityName = e.target.options[e.target.selectedIndex].dataset.name || '';
+    document.getElementById(mode + '_city').value = municipalityName;
+    const prefix = mode + '_';
+    document.getElementById(prefix + 'barangay_id').innerHTML = '<option value="">Loading...</option>';
+    if (municipalityId) loadBarangays(mode, municipalityId);
+  }
+
+  function loadBarangays(mode, municipalityId, selectedBarangay = 0) {
+    const prefix = mode + '_';
+    fetch('/api/get-barangays.php?municipality_id=' + municipalityId)
+      .then(response => response.json())
+      .then(data => {
+        const select = document.getElementById(prefix + 'barangay_id');
+        if (data.success) {
+          select.innerHTML = '<option value="">Select Barangay</option>';
+          data.barangays.forEach(barangay => {
+            const option = document.createElement('option');
+            option.value = barangay.id;
+            option.textContent = barangay.name;
+            option.dataset.name = barangay.name;
+            if (barangay.id === selectedBarangay) option.selected = true;
+            select.appendChild(option);
+          });
+          select.disabled = false;
+          select.addEventListener('change', function(e) { onBarangayChange(e, mode); });
+        }
+      });
+  }
+
+  function onBarangayChange(e, mode) {
+    const barangayName = e.target.options[e.target.selectedIndex].dataset.name || '';
+    document.getElementById(mode + '_barangay').value = barangayName;
+  }
+  </script>
 </body>
 </html>

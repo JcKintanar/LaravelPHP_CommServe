@@ -102,10 +102,16 @@ $recent_users    = $conn->query("SELECT id, firstName, lastName, username, role,
     </div>
   </div>
 
-  <div class="row g-4 mt-4">
-    <div class="col-md-4"><a href="/userManagement.php" class="btn btn-dark w-100"><i class="bi bi-people-fill me-1"></i>Manage Users</a></div>
-    <div class="col-md-4"><a href="/barangayAnnouncement.php" class="btn btn-dark w-100"><i class="bi bi-megaphone-fill me-1"></i>Manage Announcements</a></div>
-    <div class="col-md-4"><a href="/manage-requests.php" class="btn btn-dark w-100"><i class="bi bi-file-earmark-text-fill me-1"></i>Manage Requests</a></div>
+  <div class="row g-4 mt-4 justify-content-center">
+    <div class="col-md-2"><a href="/userManagement.php" class="btn btn-dark w-100"><i class="bi bi-people-fill me-1"></i>Manage Users</a></div>
+    <div class="col-md-3"><a href="/barangayAnnouncement.php" class="btn btn-dark w-100"><i class="bi bi-megaphone-fill me-1"></i>Manage Announcements</a></div>
+    <div class="col-md-2"><a href="/dashboards/adminHotlines.php" class="btn btn-dark w-100"><i class="bi bi-telephone-fill me-1"></i>Manage Hotlines</a></div>
+    <div class="col-md-3"><a href="/manage-requests.php" class="btn btn-dark w-100"><i class="bi bi-file-earmark-text-fill me-1"></i>Manage Requests</a></div>
+    <div class="col-md-2"><a href="/messages.php" class="btn btn-dark w-100"><i class="bi bi-chat-dots-fill me-1"></i>Messages</a></div>
+  </div>
+
+  <div class="row g-4 mt-3 justify-content-center">
+    <div class="col-md-3"><a href="/manage-locations.php" class="btn btn-outline-dark w-100"><i class="bi bi-geo-alt-fill me-1"></i>Manage Locations</a></div>
   </div>
 </section>
 
