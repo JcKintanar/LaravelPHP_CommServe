@@ -1,0 +1,19 @@
+{
+  "build": {
+    "temp-laravel": "docker build -t laravel-app ./temp-laravel"
+  },
+  "deploy": {
+    "temp-laravel": "docker run -p 8080:8080 -e APP_ENV=production -e APP_KEY=$APP_KEY -e DB_HOST=$DB_HOST -e DB_DATABASE=$DB_DATABASE -e DB_USERNAME=$DB_USERNAME -e DB_PASSWORD=$DB_PASSWORD laravel-app"
+  },
+  "variables": {
+    "APP_ENV": "production",
+    "APP_KEY": "",
+    "APP_URL": "",
+    "DB_CONNECTION": "mysql",
+    "DB_HOST": "",
+    "DB_PORT": "3306",
+    "DB_DATABASE": "",
+    "DB_USERNAME": "",
+    "DB_PASSWORD": ""
+  }
+}

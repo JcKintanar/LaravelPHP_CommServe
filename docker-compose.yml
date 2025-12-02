@@ -1,0 +1,35 @@
+version: "3.8"
+services:
+  laravel:
+    build: ./temp-laravel
+    container_name: laravel-app
+    environment:
+      APP_ENV: production
+      APP_KEY: ${APP_KEY}
+      APP_URL: http://localhost:8080
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: commserve
+      DB_USERNAME: commserve
+      DB_PASSWORD: commserve
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    volumes:
+      - ./temp-laravel:/app
+  db:
+    image: mysql:8
+    container_name: mysql-db
+    environment:
+      MYSQL_DATABASE: commserve
+      MYSQL_USER: commserve
+      MYSQL_PASSWORD: commserve
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+volumes:
+  dbdata:
