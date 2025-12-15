@@ -1,11 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Services\SupabaseService;
+use Illuminate\Support\Facades\DB;
 
 Route::get('/', function () {
     return response()->json([
-        'message' => 'CommServe API - Laravel + Supabase',
+        'message' => 'CommServe API - Laravel + MySQL',
         'status' => 'running',
         'version' => '1.0.0',
         'timestamp' => now()->toIso8601String()
@@ -16,26 +16,24 @@ Route::get('/health', function () {
     return response()->json(['status' => 'ok']);
 });
 
-Route::get('/test-supabase', function () {
+Route::get('/test-db', function () {
     try {
-        $supabase = new SupabaseService();
+        // Test database connection
+        DB::connection()->getPdo();
         
-        // Test connection by fetching users count
-        $response = $supabase->from('users')
-            ->select('id')
-            ->limit(1)
-            ->get();
+        // Try to fetch a user count
+        $userCount = DB::table('users')->count();
         
         return response()->json([
             'status' => 'success',
-            'message' => 'Supabase connection working!',
-            'supabase_url' => config('services.supabase.url'),
-            'has_data' => !empty($response)
+            'message' => 'Database connection working!',
+            'database' => config('database.connections.mysql.database'),
+            'user_count' => $userCount
         ]);
     } catch (\Exception $e) {
         return response()->json([
             'status' => 'error',
-            'message' => 'Supabase connection failed',
+            'message' => 'Database connection failed',
             'error' => $e->getMessage()
         ], 500);
     }
