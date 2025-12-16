@@ -8,7 +8,8 @@ if (!isset($_SESSION['user_id'])) {
     exit;
 }
 
-if (($_SESSION['role'] ?? '') !== 'official') {
+$role = $_SESSION['role'] ?? '';
+if ($role !== 'official' && $role !== 'admin') {
     header('Location: /dashboards/userDashboard.php');
     exit;
 }

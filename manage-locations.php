@@ -396,7 +396,10 @@ while ($m = $result->fetch_assoc()) $municipalities_list[] = $m;
     <!-- Regions Section -->
     <div class="card shadow-sm hierarchy-card">
       <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="bi bi-globe me-2"></i>Regions (Default)</h5>
+        <h5 class="mb-0"><i class="bi bi-globe me-2"></i>Regions</h5>
+        <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#addRegionModal">
+          <i class="bi bi-plus-circle me-1"></i>Add Region
+        </button>
       </div>
       <div class="card-body">
         <input type="text" id="regionSearch" class="form-control mb-3" placeholder="Search regions...">
@@ -420,7 +423,12 @@ while ($m = $result->fetch_assoc()) $municipalities_list[] = $m;
                     <td><?= htmlspecialchars($r['code']) ?></td>
                     <td><span class="badge bg-info"><?= $r['province_count'] ?></span></td>
                     <td>
-                      <span class="text-muted">Default Region</span>
+                      <button class="btn btn-sm btn-dark" onclick='editRegion(<?= $r['id'] ?>, "<?= htmlspecialchars($r['name'], ENT_QUOTES) ?>", "<?= htmlspecialchars($r['code'], ENT_QUOTES) ?>")'>
+                        <i class="bi bi-pencil"></i> Edit
+                      </button>
+                      <button class="btn btn-sm btn-danger" onclick='deleteRegion(<?= $r['id'] ?>, "<?= htmlspecialchars($r['name'], ENT_QUOTES) ?>")'>
+                        <i class="bi bi-trash"></i> Delete
+                      </button>
                     </td>
                   </tr>
                 <?php endwhile; ?>

@@ -10,8 +10,13 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 
+// Add new columns to users table if they don't exist
+$conn->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS dateOfBirth DATE NULL");
+$conn->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS civilStatus ENUM('Single', 'Married', 'Widowed', 'Divorced', 'Separated') NULL");
+$conn->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS yearResidency INT NULL COMMENT 'Year the user started residing in the barangay'");
+
 // Get user data
-$stmt = $conn->prepare("SELECT id, lastName, firstName, middleName, barangay, cityMunicipality, username, role FROM users WHERE id = ?");
+$stmt = $conn->prepare("SELECT id, lastName, firstName, middleName, barangay, cityMunicipality, username, role, dateOfBirth, civilStatus, yearResidency FROM users WHERE id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -219,7 +224,7 @@ $fullName = htmlspecialchars(trim($user_data['firstName'] . ' ' . ($user_data['m
 
   <!-- Main Content -->
   <div class="container py-5">
-    <h2 class="text-center mb-2"><i class="bi bi-file-earmark-text-fill me-2"></i>Request Barangay Documents</h2>
+    <h2 class="text-center mb-2"><i class="bi bi-house-fill me-2"></i>Request Barangay Documents</h2>
     <p class="text-center text-muted mb-5">Submit your document requests and track their status</p>
 
     <?php if (!empty($_SESSION['flash'])): ?>
@@ -340,26 +345,57 @@ $fullName = htmlspecialchars(trim($user_data['firstName'] . ' ' . ($user_data['m
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label">Full Name <span class="text-danger">*</span></label>
-                <input type="text" name="full_name" class="form-control" placeholder="Juan A. Dela Cruz" required>
+                <input type="text" name="full_name" class="form-control" 
+                       value="<?= htmlspecialchars(trim(($user_data['firstName'] ?? '') . ' ' . ($user_data['middleName'] ?? '') . ' ' . ($user_data['lastName'] ?? ''))) ?>" 
+                       readonly required>
+                <small class="text-muted">This is your registered name in the system</small>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
-                <input type="date" name="date_of_birth" class="form-control" required>
+                <input type="date" name="date_of_birth" class="form-control" 
+                       value="<?= htmlspecialchars($user_data['dateOfBirth'] ?? '') ?>" 
+                       <?= !empty($user_data['dateOfBirth']) ? 'readonly' : '' ?> required>
+                <?php if (!empty($user_data['dateOfBirth'])): ?>
+                  <small class="text-muted">From your profile</small>
+                <?php else: ?>
+                  <small class="text-muted">Please enter your date of birth</small>
+                <?php endif; ?>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Civil Status <span class="text-danger">*</span></label>
-                <select name="civil_status" class="form-select" required>
+                <select name="civil_status" class="form-select" 
+                        <?= !empty($user_data['civilStatus']) ? 'disabled' : '' ?> required>
                   <option value="">Select Status</option>
-                  <option value="Single">Single</option>
-                  <option value="Married">Married</option>
-                  <option value="Widowed">Widowed</option>
-                  <option value="Divorced">Divorced</option>
-                  <option value="Separated">Separated</option>
+                  <option value="Single" <?= ($user_data['civilStatus'] ?? '') === 'Single' ? 'selected' : '' ?>>Single</option>
+                  <option value="Married" <?= ($user_data['civilStatus'] ?? '') === 'Married' ? 'selected' : '' ?>>Married</option>
+                  <option value="Widowed" <?= ($user_data['civilStatus'] ?? '') === 'Widowed' ? 'selected' : '' ?>>Widowed</option>
+                  <option value="Divorced" <?= ($user_data['civilStatus'] ?? '') === 'Divorced' ? 'selected' : '' ?>>Divorced</option>
+                  <option value="Separated" <?= ($user_data['civilStatus'] ?? '') === 'Separated' ? 'selected' : '' ?>>Separated</option>
                 </select>
+                <?php if (!empty($user_data['civilStatus'])): ?>
+                  <input type="hidden" name="civil_status" value="<?= htmlspecialchars($user_data['civilStatus']) ?>">
+                  <small class="text-muted">From your profile</small>
+                <?php else: ?>
+                  <small class="text-muted">Please select your civil status</small>
+                <?php endif; ?>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Years of Residency <span class="text-danger">*</span></label>
-                <input type="number" name="years_of_residency" class="form-control" min="1" placeholder="e.g., 5" required>
+                <?php 
+                $years_residing = '';
+                if (!empty($user_data['yearResidency'])) {
+                  $years_residing = date('Y') - (int)$user_data['yearResidency'];
+                }
+                ?>
+                <input type="number" name="years_of_residency" class="form-control" min="1" 
+                       value="<?= $years_residing ?>" 
+                       <?= !empty($user_data['yearResidency']) ? 'readonly' : '' ?>
+                       placeholder="e.g., 5" required>
+                <?php if (!empty($user_data['yearResidency'])): ?>
+                  <small class="text-muted">Residing since <?= htmlspecialchars($user_data['yearResidency']) ?> (<?= $years_residing ?> years)</small>
+                <?php else: ?>
+                  <small class="text-muted">How many years have you lived here?</small>
+                <?php endif; ?>
               </div>
             </div>
           </div>

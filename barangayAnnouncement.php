@@ -335,7 +335,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $stmt = $conn->prepare('UPDATE announcements SET title=?, content=?, icon=?, color=?, image_path=?, scope_level=?, target_id=?, barangay=?, barangay_id=?, cityMunicipality=?, municipality_id=?, region=?, region_id=?, province=?, province_id=? WHERE id=?');
-    $stmt->bind_param('ssssssisissisisi', $title, $content, $icon, $color, $image_path, $scope_level, $target_id, $brgy, $barangay_id, $city, $municipality_id, $region, $region_id, $province, $province_id, $id);
+    $stmt->bind_param('ssssssississisii', $title, $content, $icon, $color, $image_path, $scope_level, $target_id, $brgy, $barangay_id, $city, $municipality_id, $region, $region_id, $province, $province_id, $id);
     if ($stmt->execute()) {
       flash('success', 'Announcement updated successfully.');
     } else {
@@ -423,9 +423,9 @@ if (isset($_GET['edit'])) {
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
-      <a class="navbar-brand fw-bold" href="/dashboards/adminDashboard.php"><i class="bi bi-megaphone-fill me-2"></i>Barangay <?= $barangay ?></a>
+      <a class="navbar-brand fw-bold" href="<?= $user_role === 'admin' ? '/dashboards/adminDashboard.php' : '/dashboards/officialDashboard.php' ?>"><i class="bi bi-megaphone-fill me-2"></i>Barangay <?= $barangay ?></a>
       <div class="d-flex">
-        <a class="nav-link text-white" href="/dashboards/adminDashboard.php"><i class="bi bi-arrow-left me-1"></i>Back to Dashboard</a>
+        <a class="nav-link text-white" href="<?= $user_role === 'admin' ? '/dashboards/adminDashboard.php' : '/dashboards/officialDashboard.php' ?>"><i class="bi bi-arrow-left me-1"></i>Back to Dashboard</a>
       </div>
     </div>
   </nav>

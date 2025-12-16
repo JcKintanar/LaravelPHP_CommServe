@@ -11,7 +11,7 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 
 // Get user data
-$stmt = $conn->prepare("SELECT id, lastName, firstName, middleName, email, phoneNumber, role, sitio, barangay, cityMunicipality, province, region, username, createdAt FROM users WHERE id = ?");
+$stmt = $conn->prepare("SELECT id, lastName, firstName, middleName, email, phoneNumber, dateOfBirth, civilStatus, yearResidency, role, sitio, barangay, cityMunicipality, province, region, username, createdAt FROM users WHERE id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
@@ -171,6 +171,31 @@ $fullName = htmlspecialchars(trim($user['firstName'] . ' ' . ($user['middleName'
             <div class="info-label">Phone Number</div>
             <div class="info-value">
               <i class="bi bi-telephone me-2"></i><?= htmlspecialchars($user['phoneNumber']) ?>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="info-label">Date of Birth</div>
+            <div class="info-value">
+              <i class="bi bi-calendar-heart me-2"></i><?= !empty($user['dateOfBirth']) ? date('F d, Y', strtotime($user['dateOfBirth'])) : 'Not set' ?>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="info-label">Civil Status</div>
+            <div class="info-value">
+              <i class="bi bi-person-vcard me-2"></i><?= !empty($user['civilStatus']) ? htmlspecialchars($user['civilStatus']) : 'Not set' ?>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="info-label">Year Started Residing</div>
+            <div class="info-value">
+              <i class="bi bi-house-heart me-2"></i><?php 
+                if (!empty($user['yearResidency'])) {
+                  $years = date('Y') - (int)$user['yearResidency'];
+                  echo htmlspecialchars($user['yearResidency']) . ' (' . $years . ' years)';
+                } else {
+                  echo 'Not set';
+                }
+              ?>
             </div>
           </div>
           <div class="col-md-6">

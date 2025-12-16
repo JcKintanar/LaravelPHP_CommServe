@@ -104,7 +104,7 @@ switch ($role) {
             <i class="bi bi-person-gear text-dark" style="font-size: 3rem;"></i>
             <h5 class="mt-3">Account Settings</h5>
             <p class="text-muted">Update your personal information and account details</p>
-            <button class="btn btn-dark" disabled>Coming Soon</button>
+            <a href="/account-settings.php" class="btn btn-dark">Manage Account</a>
           </div>
         </div>
       </div>
@@ -116,31 +116,19 @@ switch ($role) {
             <i class="bi bi-bell-fill text-dark" style="font-size: 3rem;"></i>
             <h5 class="mt-3">Notifications</h5>
             <p class="text-muted">Manage your notification preferences</p>
-            <button class="btn btn-dark" disabled>Coming Soon</button>
+            <a href="/notification-settings.php" class="btn btn-dark">Manage Notifications</a>
           </div>
         </div>
       </div>
 
-      <!-- Privacy Settings -->
+      <!-- Privacy & Security Settings -->
       <div class="col-md-6">
         <div class="card setting-card shadow-sm h-100">
           <div class="card-body text-center p-4">
             <i class="bi bi-shield-lock-fill text-dark" style="font-size: 3rem;"></i>
-            <h5 class="mt-3">Privacy</h5>
-            <p class="text-muted">Control who can see your information</p>
-            <a href="/privacy-security.php" class="btn btn-dark">Manage Privacy</a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Security Settings -->
-      <div class="col-md-6">
-        <div class="card setting-card shadow-sm h-100">
-          <div class="card-body text-center p-4">
-            <i class="bi bi-key-fill text-dark" style="font-size: 3rem;"></i>
-            <h5 class="mt-3">Security</h5>
-            <p class="text-muted">Change password and security settings</p>
-            <button class="btn btn-dark" disabled>Coming Soon</button>
+            <h5 class="mt-3">Privacy & Security</h5>
+            <p class="text-muted">Control privacy and change your password</p>
+            <a href="/security-settings.php" class="btn btn-dark">Manage Privacy & Security</a>
           </div>
         </div>
       </div>
@@ -152,19 +140,7 @@ switch ($role) {
             <i class="bi bi-translate text-dark" style="font-size: 3rem;"></i>
             <h5 class="mt-3">Language</h5>
             <p class="text-muted">Choose your preferred language</p>
-            <button class="btn btn-dark" disabled>Coming Soon</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Theme Settings -->
-      <div class="col-md-6">
-        <div class="card setting-card shadow-sm h-100">
-          <div class="card-body text-center p-4">
-            <i class="bi bi-palette-fill text-dark" style="font-size: 3rem;"></i>
-            <h5 class="mt-3">Appearance</h5>
-            <p class="text-muted">Customize the look and feel</p>
-            <button class="btn btn-dark" disabled>Coming Soon</button>
+            <a href="/language-settings.php" class="btn btn-dark">Manage Language</a>
           </div>
         </div>
       </div>

@@ -11,7 +11,7 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 
 // Get user data
-$stmt = $conn->prepare("SELECT id, lastName, firstName, middleName, barangay, cityMunicipality, username FROM users WHERE id = ?");
+$stmt = $conn->prepare("SELECT id, lastName, firstName, middleName, barangay, cityMunicipality, username, role FROM users WHERE id = ?");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -25,6 +25,7 @@ $middleName = htmlspecialchars($user_data['middleName'] ?? '', ENT_QUOTES, 'UTF-
 $barangay = htmlspecialchars($user_data['barangay'] ?? 'Barangay', ENT_QUOTES, 'UTF-8');
 $cityMunicipality = htmlspecialchars($user_data['cityMunicipality'] ?? 'N/A', ENT_QUOTES, 'UTF-8');
 $username = htmlspecialchars($user_data['username'] ?? 'Resident', ENT_QUOTES, 'UTF-8');
+$user_role = $user_data['role'] ?? 'user';
 
 // Get announcements for this barangay
 $stmt_ann = $conn->prepare("SELECT id, title, content, icon, color, image_path, createdAt FROM announcements WHERE barangay = ? OR barangay IS NULL OR barangay = '' ORDER BY createdAt DESC LIMIT 6");
@@ -80,8 +81,14 @@ $stmt_docs->close();
               <i class="bi bi-person-circle me-1"></i><?= $user_id_display ?> | <?= $lastName ?>, <?= $firstName ?> <?= $middleName ?>
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
-              <?php if (($_SESSION['role'] ?? '') === 'official'): ?>
+              <?php if ($user_role === 'admin'): ?>
+                <li><a class="dropdown-item" href="/dashboards/adminDashboard.php"><i class="bi bi-shield-check me-2"></i>Admin Dashboard</a></li>
                 <li><a class="dropdown-item" href="/dashboards/officialDashboard.php"><i class="bi bi-briefcase me-2"></i>Official Dashboard</a></li>
+                <li><a class="dropdown-item" href="/dashboards/userDashboard.php"><i class="bi bi-house-fill me-2"></i>Resident Dashboard</a></li>
+                <li><hr class="dropdown-divider"></li>
+              <?php elseif ($user_role === 'official'): ?>
+                <li><a class="dropdown-item" href="/dashboards/officialDashboard.php"><i class="bi bi-briefcase me-2"></i>Official Dashboard</a></li>
+                <li><a class="dropdown-item" href="/dashboards/userDashboard.php"><i class="bi bi-house-fill me-2"></i>Resident Dashboard</a></li>
                 <li><hr class="dropdown-divider"></li>
               <?php endif; ?>
               <li><a class="dropdown-item" href="/userProfile.php"><i class="bi bi-person me-2"></i>My Profile</a></li>

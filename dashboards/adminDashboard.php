@@ -25,6 +25,12 @@ $recent_users    = $conn->query("SELECT id, firstName, lastName, username, role,
 <title>Admin Dashboard - CommServe</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+  html, body { height: 100%; margin: 0; }
+  body { display: flex; flex-direction: column; }
+  .content-wrapper { flex: 1 0 auto; }
+  footer { flex-shrink: 0; }
+</style>
 </head>
 <body class="bg-light">
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -52,9 +58,9 @@ $recent_users    = $conn->query("SELECT id, firstName, lastName, username, role,
             <i class="bi bi-person-circle me-1"></i><?= $navbar_id ?> | <?= $navbar_last ?>, <?= $navbar_first ?> <?= $navbar_middle ?>
           </a>
           <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="/dashboards/adminDashboard.php"><i class="bi bi-speedometer2 me-2"></i>Admin Dashboard</a></li>
-            <li><a class="dropdown-item" href="/dashboards/officialDashboard.php"><i class="bi bi-person-badge me-2"></i>Official Dashboard</a></li>
-            <li><a class="dropdown-item" href="/dashboards/userDashboard.php"><i class="bi bi-people me-2"></i>Resident Dashboard</a></li>
+            <li><a class="dropdown-item" href="/dashboards/adminDashboard.php"><i class="bi bi-shield-check me-2"></i>Admin Dashboard</a></li>
+            <li><a class="dropdown-item" href="/dashboards/officialDashboard.php"><i class="bi bi-briefcase me-2"></i>Official Dashboard</a></li>
+            <li><a class="dropdown-item" href="/dashboards/userDashboard.php"><i class="bi bi-house-fill me-2"></i>Resident Dashboard</a></li>
             <li><hr class="dropdown-divider"></li>
             <li><a class="dropdown-item" href="/userProfile.php"><i class="bi bi-person me-2"></i>My Profile</a></li>
             <li><a class="dropdown-item" href="/settings.php"><i class="bi bi-gear me-2"></i>Settings</a></li>
@@ -68,6 +74,7 @@ $recent_users    = $conn->query("SELECT id, firstName, lastName, username, role,
   </div>
 </nav>
 
+<div class="content-wrapper">
 <section class="container my-5">
   <div class="row g-4 mb-4">
     <div class="col-md-3"><div class="card bg-dark text-white border-0"><div class="card-body"><h6>Total Users</h6><h2><?= $total_users ?></h2></div></div></div>
@@ -114,6 +121,7 @@ $recent_users    = $conn->query("SELECT id, firstName, lastName, username, role,
     <div class="col-md-3"><a href="/manage-locations.php" class="btn btn-outline-dark w-100"><i class="bi bi-geo-alt-fill me-1"></i>Manage Locations</a></div>
   </div>
 </section>
+</div>
 
 <!-- Footer -->
 <footer class="text-white text-center py-4 bg-dark mt-5">

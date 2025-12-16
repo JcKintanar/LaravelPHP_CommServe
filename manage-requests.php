@@ -185,11 +185,11 @@ $counts = [
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
-      <a class="navbar-brand fw-bold" href="/dashboards/adminDashboard.php">
+      <a class="navbar-brand fw-bold" href="<?= ($_SESSION['role'] ?? '') === 'admin' ? '/dashboards/adminDashboard.php' : '/dashboards/officialDashboard.php' ?>">
         <i class="bi bi-file-earmark-text-fill me-2"></i>Barangay <?= $barangay ?>
       </a>
       <div class="d-flex">
-        <a class="nav-link text-white" href="/dashboards/adminDashboard.php">
+        <a class="nav-link text-white" href="<?= ($_SESSION['role'] ?? '') === 'admin' ? '/dashboards/adminDashboard.php' : '/dashboards/officialDashboard.php' ?>">
           <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
         </a>
       </div>

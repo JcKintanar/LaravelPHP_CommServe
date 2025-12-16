@@ -86,8 +86,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $password = '123';
     }
     $password = password_hash($password, PASSWORD_DEFAULT);
-    $stmt = $conn->prepare('INSERT INTO users (firstName, lastName, middleName, username, email, phoneNumber, barangay, barangay_id, cityMunicipality, municipality_id, region, region_id, province, province_id, role, password) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
-    $stmt->bind_param('sssssssisissisis', $firstName, $lastName, $middleName, $username, $email, $phoneNumber, $barangay, $barangay_id, $city, $municipality_id, $region, $region_id, $province, $province_id, $role, $password);
+    $stmt = $conn->prepare('INSERT INTO users (firstName, lastName, middleName, username, email, phoneNumber, dateOfBirth, civilStatus, yearResidency, barangay, barangay_id, cityMunicipality, municipality_id, region, region_id, province, province_id, role, password) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)');
+    $stmt->bind_param('ssssssssisisissisis', $firstName, $lastName, $middleName, $username, $email, $phoneNumber, $dateOfBirth, $civilStatus, $yearResidency, $barangay, $barangay_id, $city, $municipality_id, $region, $region_id, $province, $province_id, $role, $password);
     if ($stmt->execute()) {
       flash('success', 'User added successfully. Default password:123');
     } else {
@@ -106,6 +106,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username  = trim($_POST['username'] ?? '');
     $email     = trim($_POST['email'] ?? '');
     $phoneNumber = trim($_POST['phoneNumber'] ?? '');
+    $dateOfBirth = trim($_POST['dateOfBirth'] ?? '');
+    $civilStatus = trim($_POST['civilStatus'] ?? '');
+    $yearResidency = !empty($_POST['yearResidency']) ? (int)$_POST['yearResidency'] : null;
     $barangay  = trim($_POST['barangay'] ?? '');
     $city      = trim($_POST['city'] ?? '');
     $region    = trim($_POST['region'] ?? '');
@@ -137,11 +140,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($password !== '') {
       $password_hashed = password_hash($password, PASSWORD_DEFAULT);
-      $stmt = $conn->prepare('UPDATE users SET firstName=?, lastName=?, middleName=?, username=?, email=?, phoneNumber=?, barangay=?, barangay_id=?, cityMunicipality=?, municipality_id=?, region=?, region_id=?, province=?, province_id=?, role=?, password=? WHERE id=?');
-      $stmt->bind_param('sssssssisissisisi', $firstName, $lastName, $middleName, $username, $email, $phoneNumber, $barangay, $barangay_id, $city, $municipality_id, $region, $region_id, $province, $province_id, $role, $password_hashed, $id);
+      $stmt = $conn->prepare('UPDATE users SET firstName=?, lastName=?, middleName=?, username=?, email=?, phoneNumber=?, dateOfBirth=?, civilStatus=?, yearResidency=?, barangay=?, barangay_id=?, cityMunicipality=?, municipality_id=?, region=?, region_id=?, province=?, province_id=?, role=?, password=? WHERE id=?');
+      $stmt->bind_param('ssssssssissisisissi', $firstName, $lastName, $middleName, $username, $email, $phoneNumber, $dateOfBirth, $civilStatus, $yearResidency, $barangay, $barangay_id, $city, $municipality_id, $region, $region_id, $province, $province_id, $role, $password_hashed, $id);
     } else {
-      $stmt = $conn->prepare('UPDATE users SET firstName=?, lastName=?, middleName=?, username=?, email=?, phoneNumber=?, barangay=?, barangay_id=?, cityMunicipality=?, municipality_id=?, region=?, region_id=?, province=?, province_id=?, role=? WHERE id=?');
-      $stmt->bind_param('sssssssisississi', $firstName, $lastName, $middleName, $username, $email, $phoneNumber, $barangay, $barangay_id, $city, $municipality_id, $region, $region_id, $province, $province_id, $role, $id);
+      $stmt = $conn->prepare('UPDATE users SET firstName=?, lastName=?, middleName=?, username=?, email=?, phoneNumber=?, dateOfBirth=?, civilStatus=?, yearResidency=?, barangay=?, barangay_id=?, cityMunicipality=?, municipality_id=?, region=?, region_id=?, province=?, province_id=?, role=? WHERE id=?');
+      $stmt->bind_param('sssssssissisisisisi', $firstName, $lastName, $middleName, $username, $email, $phoneNumber, $dateOfBirth, $civilStatus, $yearResidency, $barangay, $barangay_id, $city, $municipality_id, $region, $region_id, $province, $province_id, $role, $id);
     }
     if ($stmt->execute()) {
       flash('success', 'User updated successfully.');
@@ -186,7 +189,7 @@ $edit_user = null;
 if (isset($_GET['edit'])) {
   $eid = (int)$_GET['edit'];
   if ($eid > 0) {
-    $st = $conn->prepare('SELECT id, firstName, lastName, middleName, username, email, phoneNumber, barangay, barangay_id, cityMunicipality, municipality_id, region, region_id, province, province_id, role FROM users WHERE id=?');
+    $st = $conn->prepare('SELECT id, firstName, lastName, middleName, username, email, phoneNumber, dateOfBirth, civilStatus, yearResidency, barangay, barangay_id, cityMunicipality, municipality_id, region, region_id, province, province_id, role FROM users WHERE id=?');
     $st->bind_param('i', $eid);
     $st->execute();
     $res = $st->get_result();
@@ -209,6 +212,20 @@ if (isset($_GET['edit'])) {
     .btn-black { background-color: #000; color: #fff; }
     .btn-black:hover { background-color: #333; color: #fff; }
     .badge { background-color: #000; }
+    
+    /* Mobile responsive improvements */
+    @media (max-width: 768px) {
+      .container { padding-left: 10px; padding-right: 10px; }
+      h2 { font-size: 1.5rem; }
+      .card-body { padding: 1rem 0.5rem; }
+      .form-label { font-size: 0.9rem; margin-bottom: 0.25rem; }
+      .form-control, .form-select { font-size: 0.9rem; padding: 0.5rem; }
+      .btn { font-size: 0.875rem; padding: 0.5rem 0.75rem; }
+      .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .table { font-size: 0.85rem; min-width: 800px; }
+      .table td, .table th { padding: 0.5rem; white-space: nowrap; }
+      .alert { font-size: 0.9rem; padding: 0.75rem; }
+    }
   </style>
 </head>
 <body>
@@ -231,7 +248,8 @@ if (isset($_GET['edit'])) {
       <?php unset($_SESSION['flash']); ?>
     <?php endif; ?>
 
-    <!-- Add User Form -->
+    <!-- Add User Form (hidden when editing) -->
+    <?php if (!$edit_user): ?>
     <div class="card shadow-sm mb-4">
       <div class="card-header bg-dark text-white">Add User</div>
       <div class="card-body">
@@ -239,80 +257,103 @@ if (isset($_GET['edit'])) {
           <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
           <input type="hidden" name="action" value="add">
           <div class="col-md-4">
-            <label class="form-label">Last Name</label>
+            <label class="form-label">Last Name <span class="text-danger">*</span></label>
             <input type="text" name="lastName" class="form-control" required>
           </div>
           <div class="col-md-4">
-            <label class="form-label">First Name</label>
+            <label class="form-label">First Name <span class="text-danger">*</span></label>
             <input type="text" name="firstName" class="form-control" required>
           </div>
           <div class="col-md-4">
             <label class="form-label">Middle Name</label>
             <input type="text" name="middleName" class="form-control">
           </div>
-          <div class="col-md-6">
-            <label class="form-label">Username</label>
+          <div class="col-md-4">
+            <label class="form-label">Username <span class="text-danger">*</span></label>
             <input type="text" name="username" class="form-control" required>
           </div>
-          <div class="col-md-6">
-            <label class="form-label">Password</label>
-            <input type="text" name="password" class="form-control" placeholder="Leave blank for default (123)">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Email</label>
+          <div class="col-md-4">
+            <label class="form-label">Email <span class="text-danger">*</span></label>
             <input type="email" name="email" class="form-control" required>
           </div>
-          <div class="col-md-6">
+          <div class="col-md-4">
             <label class="form-label">Phone Number</label>
-            <input type="text" name="phoneNumber" class="form-control">
+            <input type="text" name="phoneNumber" class="form-control" placeholder="09123456789">
           </div>
-          <div class="col-md-6">
-            <label class="form-label">Region</label>
+          <div class="col-md-4">
+            <label class="form-label">Password</label>
+            <input type="text" name="password" class="form-control" placeholder="Default: 123">
+            <small class="text-muted">Leave blank for default</small>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Date of Birth</label>
+            <input type="date" name="dateOfBirth" class="form-control">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Civil Status</label>
+            <select name="civilStatus" class="form-select">
+              <option value="">Select Status</option>
+              <option value="Single">Single</option>
+              <option value="Married">Married</option>
+              <option value="Widowed">Widowed</option>
+              <option value="Divorced">Divorced</option>
+              <option value="Separated">Separated</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Year Started Residing</label>
+            <input type="number" name="yearResidency" class="form-control" min="1900" max="<?= date('Y') ?>" placeholder="e.g., 2015">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Region <span class="text-danger">*</span></label>
             <select name="region_id" id="add_region_id" class="form-select" required>
               <option value="">Select Region</option>
             </select>
             <input type="hidden" name="region" id="add_region">
           </div>
-          <div class="col-md-6">
-            <label class="form-label">Province</label>
+          <div class="col-md-4">
+            <label class="form-label">Province <span class="text-danger">*</span></label>
             <select name="province_id" id="add_province_id" class="form-select" required disabled>
               <option value="">Select Region first</option>
             </select>
             <input type="hidden" name="province" id="add_province">
           </div>
-          <div class="col-md-6">
-            <label class="form-label">Municipality/City</label>
+          <div class="col-md-4">
+            <label class="form-label">Municipality/City <span class="text-danger">*</span></label>
             <select name="municipality_id" id="add_municipality_id" class="form-select" required disabled>
               <option value="">Select Province first</option>
             </select>
             <input type="hidden" name="city" id="add_city">
           </div>
-          <div class="col-md-6">
-            <label class="form-label">Barangay</label>
+          <div class="col-md-4">
+            <label class="form-label">Barangay <span class="text-danger">*</span></label>
             <select name="barangay_id" id="add_barangay_id" class="form-select" required disabled>
               <option value="">Select Municipality first</option>
             </select>
             <input type="hidden" name="barangay" id="add_barangay">
           </div>
-          <div class="col-md-6">
-            <label class="form-label">Role</label>
+          <div class="col-md-4">
+            <label class="form-label">Role <span class="text-danger">*</span></label>
             <select class="form-select" name="role">
               <option value="user">User</option>
               <option value="official">Official</option>
               <option value="admin">Admin</option>
             </select>
           </div>
-          <div class="col-12">
+          <div class="col-12 mt-2">
             <div class="alert alert-info py-2 mb-0">
-              <i class="bi bi-info-circle me-2"></i>Default password will be set to <strong>123</strong>.
+              <i class="bi bi-info-circle me-2"></i>Default password will be set to <strong>123</strong> if left blank.
             </div>
           </div>
-          <div class="col-12 text-end">
-            <button type="submit" class="btn btn-black">Save User</button>
+          <div class="col-12 text-end mt-3">
+            <button type="submit" class="btn btn-black px-4">
+              <i class="bi bi-person-plus me-1"></i>Save User
+            </button>
           </div>
         </form>
       </div>
     </div>
+    <?php endif; ?>
 
     <!-- Edit User Form (visible when ?edit=ID) -->
     <?php if ($edit_user): ?>
@@ -323,64 +364,85 @@ if (isset($_GET['edit'])) {
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
             <input type="hidden" name="action" value="edit">
             <input type="hidden" name="id" value="<?= (int)$edit_user['id'] ?>">
-            <div class="col-md-6">
-              <label class="form-label">First Name</label>
-              <input type="text" name="firstName" class="form-control" value="<?= htmlspecialchars($edit_user['firstName']) ?>" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Last Name</label>
+            <div class="col-md-4">
+              <label class="form-label">Last Name <span class="text-danger">*</span></label>
               <input type="text" name="lastName" class="form-control" value="<?= htmlspecialchars($edit_user['lastName']) ?>" required>
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Username</label>
-              <input type="text" name="username" class="form-control" value="<?= htmlspecialchars($edit_user['username']) ?>" required>
+            <div class="col-md-4">
+              <label class="form-label">First Name <span class="text-danger">*</span></label>
+              <input type="text" name="firstName" class="form-control" value="<?= htmlspecialchars($edit_user['firstName']) ?>" required>
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Password</label>
-              <input type="text" name="password" class="form-control" placeholder="Leave blank to keep current password">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Email</label>
-              <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($edit_user['email']) ?>">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Phone Number</label>
-              <input type="text" name="phoneNumber" class="form-control" value="<?= htmlspecialchars($edit_user['phoneNumber']) ?>">
-            </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label class="form-label">Middle Name</label>
               <input type="text" name="middleName" class="form-control" value="<?= htmlspecialchars($edit_user['middleName'] ?? '') ?>">
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Region</label>
+            <div class="col-md-4">
+              <label class="form-label">Username <span class="text-danger">*</span></label>
+              <input type="text" name="username" class="form-control" value="<?= htmlspecialchars($edit_user['username']) ?>" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Email <span class="text-danger">*</span></label>
+              <input type="email" name="email" class="form-control" value="<?= htmlspecialchars($edit_user['email']) ?>" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Phone Number</label>
+              <input type="text" name="phoneNumber" class="form-control" value="<?= htmlspecialchars($edit_user['phoneNumber']) ?>" placeholder="09123456789">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Password</label>
+              <input type="text" name="password" class="form-control" placeholder="Leave blank to keep current">
+              <small class="text-muted">Leave blank to keep current password</small>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Date of Birth</label>
+              <input type="date" name="dateOfBirth" class="form-control" value="<?= htmlspecialchars($edit_user['dateOfBirth'] ?? '') ?>">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Civil Status</label>
+              <select name="civilStatus" class="form-select">
+                <option value="">Select Status</option>
+                <option value="Single" <?= ($edit_user['civilStatus'] ?? '') === 'Single' ? 'selected' : '' ?>>Single</option>
+                <option value="Married" <?= ($edit_user['civilStatus'] ?? '') === 'Married' ? 'selected' : '' ?>>Married</option>
+                <option value="Widowed" <?= ($edit_user['civilStatus'] ?? '') === 'Widowed' ? 'selected' : '' ?>>Widowed</option>
+                <option value="Divorced" <?= ($edit_user['civilStatus'] ?? '') === 'Divorced' ? 'selected' : '' ?>>Divorced</option>
+                <option value="Separated" <?= ($edit_user['civilStatus'] ?? '') === 'Separated' ? 'selected' : '' ?>>Separated</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Year Started Residing</label>
+              <input type="number" name="yearResidency" class="form-control" min="1900" max="<?= date('Y') ?>" 
+                     value="<?= htmlspecialchars($edit_user['yearResidency'] ?? '') ?>" placeholder="e.g., 2015">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Region <span class="text-danger">*</span></label>
               <select name="region_id" id="edit_region_id" class="form-select" required>
                 <option value="">Select Region</option>
               </select>
               <input type="hidden" name="region" id="edit_region" value="<?= htmlspecialchars($edit_user['region'] ?? '') ?>">
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Province</label>
+            <div class="col-md-4">
+              <label class="form-label">Province <span class="text-danger">*</span></label>
               <select name="province_id" id="edit_province_id" class="form-select" required>
                 <option value="">Select Region first</option>
               </select>
               <input type="hidden" name="province" id="edit_province" value="<?= htmlspecialchars($edit_user['province'] ?? '') ?>">
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Municipality/City</label>
+            <div class="col-md-4">
+              <label class="form-label">Municipality/City <span class="text-danger">*</span></label>
               <select name="municipality_id" id="edit_municipality_id" class="form-select" required>
                 <option value="">Select Province first</option>
               </select>
               <input type="hidden" name="city" id="edit_city" value="<?= htmlspecialchars($edit_user['cityMunicipality'] ?? '') ?>">
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Barangay</label>
+            <div class="col-md-4">
+              <label class="form-label">Barangay <span class="text-danger">*</span></label>
               <select name="barangay_id" id="edit_barangay_id" class="form-select" required>
                 <option value="">Select Municipality first</option>
               </select>
               <input type="hidden" name="barangay" id="edit_barangay" value="<?= htmlspecialchars($edit_user['barangay'] ?? '') ?>">
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Role</label>
+            <div class="col-md-4">
+              <label class="form-label">Role <span class="text-danger">*</span></label>
               <select class="form-select" name="role">
                 <option value="user" <?= $edit_user['role']==='user'?'selected':''; ?>>User</option>
                 <option value="official" <?= $edit_user['role']==='official'?'selected':''; ?>>Official</option>
@@ -399,6 +461,7 @@ if (isset($_GET['edit'])) {
     <!-- User Table -->
     <div class="card shadow-sm">
       <div class="card-body">
+        <div class="table-responsive">
         <table class="table table-hover align-middle" id="userTable">
           <thead class="table-dark">
             <tr>
@@ -445,6 +508,7 @@ if (isset($_GET['edit'])) {
             <?php endwhile; ?>
           </tbody>
         </table>
+        </div>
       </div>
     </div>
 
